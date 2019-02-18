@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
+	<title>Assignment 2 - Part 1</title>
+
+	<!-- D3.js -->
+	<script src="d3.min.js"></script>
+	
+	<style>
+		#small{
+			stroke : #000000;
+			 float: left;
+		}
+		
+		.monthArc {
+			fill: white;
+			stroke: #FFFFFF;
+		}
+
+		.monthArc2 {
+			fill: white;
+			stroke: #FFFFFF;
+		}
+
+		.monthText {
+			fill: #6B6B6B;
+			font-size: 13px;
+			font-family: 'Arial', sans-serif;
+			text-align: center;
+		}
+
+		.monthText2 {
+			fill: #6B6B6B;
+			font-size: 10px;
+			font-family: 'Arial', sans-serif;
+			text-align: center;
+		}
+	</style>
+  </head>
+  <body>
+
+	<div id="small"></div>
+	
+    <script>
+
+		var screen = window.innerWidth;
+
+		var header = {left: 70, top: 70, right: 35, bottom: 35},
+			width = Math.min(screen, 800) - header.left - header.right,
+			height = Math.min(screen, 800) - header.top - header.bottom;
+					
+		var svg = d3.select("#small").append("svg")
+					.attr("width", (width + header.left + header.right))
+					.attr("height", (height + header.top + header.bottom))
+				  .append("g").attr("class", "wrapper")
+				  .attr("transform", "translate(" + (width / 2 + header.left) + "," + (height / 2 + header.top) + ")");
+
+		const data = [
+		  {month:1,  data:[148, 137, 512]}, 
+		  {month:2,  data:[182, 87, 624]}, 
+		  {month:3,  data:[0, 235, 494]}, 
+		  {month:4,  data:[30, 90, 507]},
+		  {month:5,  data:[97, 49, 408]},
+		  {month:6,  data:[110, 209, 492]}, 
+		  {month:7,  data:[133, 34, 582]}, 
+		  {month:8,  data:[60, 64, 383]},
+		  {month:9,  data:[120, 276, 389]},
+		  {month:10, data:[200, 0, 428]},
+		  {month:11, data:[32, 45, 378]}, 
+		  {month:12, data:[28, 18, 191]},
+		];
+		
+		var monthData = [
+			{month: "January", 	startDate: 0, 		endDate: 30},
+			{month: "February", startDate: 31, 		endDate: 58},
+			{month: "March", 	startDate: 59, 		endDate: 89},
+			{month: "April", 	startDate: 90, 		endDate: 119},
+			{month: "May", 		startDate: 120, 	endDate: 150},
+			{month: "June", 	startDate: 151, 	endDate: 180},
+			{month: "July", 	startDate: 181, 	endDate: 211},
+			{month: "August", 	startDate: 212, 	endDate: 242},
+			{month: "September",startDate: 243, 	endDate: 272},
+			{month: "October", 	startDate: 273, 	endDate: 303},
+			{month: "November", startDate: 306, 	endDate: 333},
+			{month: "December",	startDate: 334, 	endDate: 364}
+		];
+
+		const colours = [ '#e094db','#2f3738','#4dcdd6' ];
+		const colourSmall = [ '#5bc1a4','##325687','#964892' ];
+		const segments = coxcomb(data, Math.min(width/2,height/2)/2);
+		const segments1 = coxcombSmall(data, Math.min(width/4,height/4)/2);
+		const arc = d3.arc();
+
+		var arc1 = d3.arc()
+			.innerRadius(width/2*.9/2) 
+			.outerRadius(width/2*.9/2 + 30);
+
+		var pie = d3.pie()
+			.value(function(d) { return d.endDate - d.startDate; })
+			.padAngle(.01)
+			.sort(null);
+
+		svg.selectAll(".monthArc")
+			.data(pie(monthData))
+		   .enter().append("path")
+			.attr("class", "monthArc")
+			.attr("id", function(d,i) { return "monthArc_"+i; })
+			.attr("d", arc1);
+			
+		svg.selectAll(".monthText")
+			.data(monthData)
+		   .enter().append("text")
+			.attr("class", "monthText")
+			.attr("x", 5) 
+			.attr("dy", 18) 
+		   .append("textPath")
+			.attr("xlink:href",function(d,i){return "#monthArc_"+i;})
+			.text(function(d){return d.month;});	
+
+		 var arc3 = d3.arc()
+			.innerRadius(width/2*.5/2) 
+			.outerRadius(width/2*.5/2 + 30);
+
+		  var pie1 = d3.pie()
+			.value(function(d) { return d.endDate - d.startDate; })
+			.padAngle(.01)
+			.sort(null);
+
+		svg.selectAll(".monthArc2")
+			.data(pie1(monthData))
+		   .enter().append("path")
+			.attr("class", "monthArc2")
+			.attr("id", function(d,i) { return "monthArc2_"+i; })
+			.attr('transform',`translate(${(width*1/2 - 350 )},${(height/2 - 650)})rotate(-180)`)
+			.attr("d", arc3);
+			
+		//Append the month names within the arcs
+		svg.selectAll(".monthText2")
+			.data(monthData)
+		   .enter().append("text")
+			.attr("class", "monthText2")
+			.attr("x", 5) //Move the text from the start angle of the arc
+			.attr("dy", 18) //Move the text down
+		   .append("textPath")
+			.attr("xlink:href",function(d,i){return "#monthArc2_"+i;})
+			.text(function(d){return d.month;});	
+
+		//large coxcomb
+		svg = d3.select('svg')
+		  .append('g')
+		    .attr('transform',`translate(${(width/2 + 70)},${(height/2 + 70)})`)
+		  .selectAll('path.segment')
+		    .data(segments)
+		  .enter()
+		    .append('path')
+		    .attr('d', d=>arc(d))
+		    .attr('fill', d=>d.fill);
+
+		//small coxcomb
+		svg = d3.select('svg')
+		  .append('g')
+		    .attr('transform',`translate(${(width*1/8 + 325)},${(height*1/8 + 30)})rotate(-180)`)
+		  .selectAll('path.segment')
+		    .data(segments1)
+		  .enter()
+		    .append('path')
+		    .attr('d', d=>arc(d))
+		    .attr('fill', d=>d.fill);
+
+		function coxcomb(data, radius){ 
+		  const angular = d3.scaleLinear()
+		    .range([0, 2*Math.PI])  
+		    .domain([0, data.length])
+
+		  const largest = data.reduce(
+		    (maxValue, currentArray) => {
+		      return Math.max(d3.sum(currentArray.data), maxValue)
+		    },0);
+
+		  const scale = d3.scaleLinear()
+		    .range([0, radius])
+		    .domain([0, largest]); 
+
+		  const elements = [];
+
+		  data.forEach((d, i)=>{
+		    let stackHeight = 0;
+		    d.text
+		    d.data.forEach((datum,j)=>{    
+		      elements.push({
+		          data: { month: d.month, value: datum, text: d.text  }, 
+		          innerRadius: stackHeight,
+		          outerRadius: stackHeight + scale(datum/1.2),
+		          startAngle: angular(i),
+		          endAngle: angular(i+1),
+		          fill:colours[j]
+		        });
+		      stackHeight = stackHeight + scale(datum/1.2);
+		    })
+		  });
+		//  console.log(elements)
+		  return elements;
+		}
+
+		function coxcombSmall(data, radius){ 
+		  const angular = d3.scaleLinear()
+		    .range([0, 2*Math.PI])  
+		    .domain([0, data.length])
+
+		  const largest = data.reduce(
+		    (maxValue, currentArray) => {
+		      return Math.max(d3.sum(currentArray.data), maxValue)
+		    },0);
+
+		  const scale = d3.scaleLinear()
+		    .range([0, radius])
+		    .domain([0, largest]); 
+
+		  const elements = [];
+
+		  data.forEach((d, i)=>{
+		    let stackHeight = 0;
+		    d.text
+		    d.data.forEach((datum,j)=>{    
+		      elements.push({
+		          data: { month: d.month, value: datum, text: d.text  }, 
+		          innerRadius: stackHeight,
+		          outerRadius: stackHeight + scale(datum/1.2),
+		          startAngle: angular(i),
+		          endAngle: angular(i+1),
+		          fill:colourSmall[j]
+		        });
+		      stackHeight = stackHeight + scale(datum/1.2);
+		    })
+		  });
+		  console.log(elements)
+		  return elements;
+		}
+
+
+		d3.select(self.frameElement).style("height", height + "px");
+	</script>
+  </body>
+</html>

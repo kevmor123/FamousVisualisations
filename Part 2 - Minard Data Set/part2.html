@@ -1,69 +1,145 @@
-<!DOCTYPE html>
-<html>
-   <head>
-      <script type = "text/javascript" src = "https://d3js.org/d3.v4.min.js"></script>
-      <style> 
-         .line {
-            fill: none;
-            stroke: green;
-            stroke-width: 5px;
-         }
-      </style>
-   </head>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style type="text/css">
+html {
+    min-height: 100%;
+    overflow-x: hidden;
+}
+body {
+    position: relative;
+    font-family: sans-serif;
+    font-size: 0.8em;
+}
+svg {
+    width: 100%;
+}
+#mapEl {
+    border-bottom: 2px solid #999;
+}
+</style>
+</head>
+<body>
 
-   <body>
-      <script>
-         // set the dimensions and margins of the graph
-         var margin = {top: 20, right: 20, bottom: 30, left: 50},
-         width = 960 - margin.left - margin.right,
-         height = 500 - margin.top - margin.bottom;
+<svg id="mapEl" width="800" height="300"></svg>
+<svg id="chartEl" width="800" viewBox="0 0 800 200" preserveAspectRatio="xMidYMin slice"></svg>
+<small>Map data taken from</a></small>
 
-         // set the ranges
-         var x = d3.scaleTime().range([0, width]);
-         var y = d3.scaleLinear().range([height, 0]);
+<script src="//d3js.org/d3.v3.js"></script>
+<script src="//floledermann.github.io/mapmap-examples/lib/mapmap-0.3.8.js"></script>
+<script src="data.js"></script>
+<script>
+var dd = mapmap.datadata;
+var map = mapmap('#mapEl')
+    // layer 1: ARMY MOVEMENT
+    .geometry(napoleon.army, {
+        map: dd.map.key('group'),
+        reduce: dd.emit.geo.segments()
+    })
+    .meta({
+        'size': {
+            label: "Troop Size",
+            numberFormat: ',.0d',
+            domain: [0,1000000],
+            scale: 'linear',
+            'stroke-width': [0, 100],
+            undefinedLabel: null
+        },
+        'dir': {
+            scale: 'ordinal',
+            domain: [-1,1],
+            'stroke': ['#000000', '#e5cbab'],
+            undefinedSymbols: {
+                'stroke': '#000000'
+            }
+        }
+    })
+    .hoverInfo('size')
+    .attr('stroke-linecap', 'round')
+    .symbolizeAttribute('size', 'stroke-width')
+    .symbolizeAttribute('dir', 'stroke')
+    // The anchorFunction "projects" any data to a point on the map
+    .anchorFunction(lonAnchors)
+    // layer 2: CITIES
+    .geometry(napoleon.cities, {
+        map: dd.map.geo.point('lat','lon')
+    })
+    .symbolize(mapmap.symbolize.addLabel('name', {
+        dx: 7,
+        'text-anchor': 'left'
+    }))
+;
+createChart('chartEl', napoleon.temp, map);
+function lonAnchors(obj) {
+    // search data for given longitude, starting from end of journey
+    for (var i=napoleon.army.length - 1; i>=0; i--) {
+        var place = napoleon.army[i];
+        if (place.lon == obj.lon) {
+            return this.project([place.lon, place.lat]);
+        }
+    }
+    return null;
+}
+function createChart(el, data, map) {
+    var width = 800,
+        height = 100;
+    var y = d3.scale.linear()
+        .range([height, 10]);
+    var yAxis = d3.svg.axis()
+        .scale(y)
+        .orient("left");
 
-         // define the line
-         var valueline = d3.line()
-            .x(function(d) { return x(d.X); })
-            .y(function(d) { return y(d.TEMP); });
+    el = d3.select('#' + el);
 
-         // append the svg obgect to the body of the page
-         // appends a 'group' element to 'svg'
-         // moves the 'group' element to the top left margin
-         var svg = d3.select("body").append("svg")
-            .attr("width", width + margin.left + margin.right)
-            .attr("height", height + margin.top + margin.bottom)
-            .append("g").attr("transform",
-               "translate(" + margin.left + "," + margin.top + ")");
+    y.domain(d3.extent(data, function(d) { return d.temp; }));
 
-         // Get the data
-         d3.csv("data.csv", function(error, data) {
-            if (error) throw error;
-            // format the data
-            data.forEach(function(d) {
-               d.X = d.X;
-               d.TEMP = +d.TEMP;
-            });
+    var path = d3.svg.line()
+        .x(function(d){
+            return map.anchor(d)[0];
+        })
+        .y(function(d){ return y(d.temp); });
 
-            // Scale the range of the data
-            x.domain(d3.extent(data, function(d) { return d.X; }));
-            y.domain([0, d3.max(data, function(d) { return d.TEMP; })]);
+    el.append('path')
+        .datum(data)
+        .attr({
+            'class': 'temp',
+            fill: 'none',
+            stroke: '#333',
+            'stroke-width': '0.8'
+        })
+        .attr('d', path);
 
-            // Add the valueline path.
-            svg.append("path")
-               .data([data])
-               .attr("class", "line")
-               .attr("d", valueline);
+    el.selectAll('line.anchor')
+        .data(data)
+        .enter()
+        .append('line')
+        .attr({
+            'class': 'anchor',
+            x1:function(d){return map.anchor(d)[0]},
+            y1:function(d){ return y(d.temp); },
+            x2:function(d){return map.anchor(d)[0]},
+            y2:0,
+            fill: 'none',
+            stroke: '#333',
+            'stroke-width': '0.3'
+        });
 
-            // Add the X Axis
-            svg.append("g")
-               .attr("transform", "translate(0," + height + ")")
-               .call(d3.axisBottom(x));
-
-            // Add the Y Axis
-            svg.append("g")
-               .call(d3.axisLeft(y));
-         });
-      </script>
-   </body>
-</html>
+    d3.select('#mapEl g.fixed')
+        .selectAll('line.anchor')
+        .data(data)
+        .enter()
+        .append('line')
+        .attr({
+            'class': 'anchor',
+            x1:function(d){return map.anchor(d)[0]},
+            y1:function(d){ return map.anchor(d)[1]; },
+            x2:function(d){return map.anchor(d)[0]},
+            y2:400,
+            fill: 'none',
+            stroke: '#333',
+            'stroke-width': '0.3'
+        });
+}
+</script>
+</body>

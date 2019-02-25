@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style type="text/css">
+html {
+    min-height: 100%;
+    overflow-x: hidden;
+}
+body {
+    position: relative;
+    font-family: sans-serif;
+    font-size: 0.4em;
+}
+
+.key-dot {
+    display: inline-block;
+    height: 40px;
+    margin-right: .9em;
+    width: 40px;
+}
+
+.dir1 { background: #161515;}
+.dir-1 { background: #2848ff;}
+.temper { background: #e20d0d;}
+
+svg {
+    width: 100%;
+}
+
+.legend {
+    float:left;
+    margin-right: 1em;
+    font-size: 1.9em;
+}
+
+.dot {
+  height: 25px;
+  background-color:#fff;
+  border:3px solid black;
+  width: 25px;
+  border-radius: 50%;
+   -moz-border-radius:50%;
+   -webkit-border-radius:50%;
+  display: inline-block;
+}
+
+.country-name {
+    margin: 0 !important;
+}
+
+#mapEl {
+    border-bottom: 2px solid #999;
+}
+</style>
+</head>
+<body>
+
+<svg id="mapEl" width="800" height="300"></svg>
+<svg id="chartEl" width="800" viewBox="0 0 800 200" preserveAspectRatio="xMidYMin slice"></svg>
+<div id="legend">
+      <h1 >Legend</h1>
+       <div class="legend"> <p class="country-name"><span class="key-dot dir1"></span>Direction A</p> </div>
+       <div class="legend"> <p class="country-name"><span class="key-dot dir-1"></span>Direction R</p> </div>
+       <div class="legend"> <p class="country-name"><span class="key-dot temper"></span>Temperatures</p> </div>
+       <div class="legend"> <p class="country-name"><span class="dot"></span>City Name</p> </div>
+</div>
+<script src="//d3js.org/d3.v3.js"></script>
+<script src="mapmap-0.3.8.js"></script>
+<script src="data.js"></script>
+<script>
+var dd = mapmap.datadata;
+var map = mapmap('#mapEl')
+    // layer 1: ARMY MOVEMENT
+    .geometry(napoleon.army, {
+        map: dd.map.key('DIV'),
+        reduce: dd.emit.geo.segments()
+    })
+    .meta({
+        'SURV': {
+            numberFormat: ',.0d',
+            domain: [0,1000000],
+            scale: 'linear',
+            'stroke-width': [0, 100],
+            undefinedLabel: null
+        },
+        'DIR': {
+            scale: 'ordinal',
+            domain: [-1,1],
+            'stroke': ['#161515', '#2848ff'], //green and blue
+            undefinedSymbols: {
+                'stroke': '#000000'
+            }
+        }
+    })
+    .attr('stroke-linecap', 'round')
+    .symbolizeAttribute('SURV', 'stroke-width')
+    .symbolizeAttribute('DIR', 'stroke')
+    // The anchorFunction "projects" any data to a point on the map
+    .anchorFunction(lonAnchors)
+    // layer 2: CITIES
+    .geometry(napoleon.cities, {
+        map: dd.map.geo.point('lat','lon')
+    })
+    .symbolize(mapmap.symbolize.addLabel('CITY', {
+        dx: 7,
+        'text-anchor': 'left'
+    }))
+;
+createChart('chartEl', napoleon.TEMP, map);
+function lonAnchors(obj) {
+    // search data for given longitude, starting from end of journey
+    for (var i=napoleon.army.length - 1; i>=0; i--) {
+        var place = napoleon.army[i];
+        if (place.lon == obj.lon) {
+            return this.project([place.lon, place.lat]);
+        }
+    }
+    return null;
+}
+function createChart(el, data, map) {
+    var width = 800,
+        height = 100;
+    var y = d3.scale.linear()
+        .range([height, 10]);
+    var yAxis = d3.svg.axis()
+        .scale(y)
+        .orient("right");
+
+    el = d3.select('#' + el);
+
+    y.domain(d3.extent(data, function(d) { return d.TEMP; }));
+
+   
+    
+    var path = d3.svg.line()
+        .x(function(d){
+            return map.anchor(d)[0];
+        })
+        .y(function(d){ return y(d.TEMP); });
+
+    el.append('path')
+        .datum(data)
+        .attr({
+            'class': 'TEMP',
+            fill: 'none',
+            stroke: '#e20d0d', //red
+            'stroke-width': '1.0'
+        })
+        .attr('d', path);
+
+   el.selectAll("text")
+        .data(data)
+        .enter().append("text")
+          .attr("class", "nodetext")
+          .attr("dx", function(d) { return map.anchor(d)[0]; })
+          .attr("dy", function(d) { return y(d.TEMP-2); })
+          .text(function(d) { return (d.TEMP + "°C")});
+
+    var yAxisGroup = el.append("g")
+        .call(yAxis);
+
+
+    el.selectAll('line.anchor')
+        .data(data)
+        .enter()
+        .append('line')
+        .attr({
+            'class': 'anchor',
+            x1:function(d){return map.anchor(d)[0]},
+            y1:function(d){ return y(d.TEMP); },
+            x2:function(d){return map.anchor(d)[0]},
+            y2:0,
+            fill: 'none',
+            stroke: '#000000', 
+            'stroke-width': '0.3'
+        });
+
+    d3.select('#mapEl g.fixed')
+        .selectAll('line.anchor')
+        .data(data)
+        .enter()
+        .append('line')
+        .attr({
+            'class': 'anchor',
+            x1:function(d){return map.anchor(d)[0]},
+            y1:function(d){ return map.anchor(d)[1]; },
+            x2:function(d){return map.anchor(d)[0]},
+            y2:400,
+            fill: 'none',
+            stroke: '#000000',
+            'stroke-width': '0.3'
+        });
+}
+</script>
+</body>

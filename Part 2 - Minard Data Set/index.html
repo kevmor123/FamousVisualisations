@@ -71,8 +71,8 @@ svg {
 <script>
 var dd = mapmap.datadata;
 var map = mapmap('#mapEl')
-    // layer 1: ARMY MOVEMENT
-    .geometry(napoleon.army, {
+
+    .geometry(partB.ARMY, {
         map: dd.map.key('DIV'),
         reduce: dd.emit.geo.segments()
     })
@@ -96,10 +96,9 @@ var map = mapmap('#mapEl')
     .attr('stroke-linecap', 'round')
     .symbolizeAttribute('SURV', 'stroke-width')
     .symbolizeAttribute('DIR', 'stroke')
-    // The anchorFunction "projects" any data to a point on the map
     .anchorFunction(lonAnchors)
-    // layer 2: CITIES
-    .geometry(napoleon.cities, {
+
+    .geometry(partB.cities, {
         map: dd.map.geo.point('lat','lon')
     })
     .symbolize(mapmap.symbolize.addLabel('CITY', {
@@ -107,11 +106,11 @@ var map = mapmap('#mapEl')
         'text-anchor': 'left'
     }))
 ;
-createChart('chartEl', napoleon.TEMP, map);
+createChart('chartEl', partB.TEMP, map);
 function lonAnchors(obj) {
-    // search data for given longitude, starting from end of journey
-    for (var i=napoleon.army.length - 1; i>=0; i--) {
-        var place = napoleon.army[i];
+
+    for (var i=partB.ARMY.length - 1; i>=0; i--) {
+        var place = partB.ARMY[i];
         if (place.lon == obj.lon) {
             return this.project([place.lon, place.lat]);
         }
@@ -130,8 +129,6 @@ function createChart(el, data, map) {
     el = d3.select('#' + el);
 
     y.domain(d3.extent(data, function(d) { return d.TEMP; }));
-
-   
     
     var path = d3.svg.line()
         .x(function(d){
@@ -149,7 +146,7 @@ function createChart(el, data, map) {
         })
         .attr('d', path);
 
-   el.selectAll("text")
+    el.selectAll("text")
         .data(data)
         .enter().append("text")
           .attr("class", "nodetext")
@@ -159,6 +156,7 @@ function createChart(el, data, map) {
 
     var yAxisGroup = el.append("g")
         .call(yAxis);
+
 
 
     el.selectAll('line.anchor')

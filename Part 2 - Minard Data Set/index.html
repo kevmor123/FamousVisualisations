@@ -96,7 +96,7 @@ var map = mapmap('#mapEl')
     .attr('stroke-linecap', 'round')
     .symbolizeAttribute('SURV', 'stroke-width')
     .symbolizeAttribute('DIR', 'stroke')
-    .anchorFunction(lonAnchors)
+    .anchorFunction(lonValues)
 
     .geometry(partB.cities, {
         map: dd.map.geo.point('lat','lon')
@@ -106,8 +106,8 @@ var map = mapmap('#mapEl')
         'text-anchor': 'left'
     }))
 ;
-createChart('chartEl', partB.TEMP, map);
-function lonAnchors(obj) {
+createGraph('chartEl', partB.TEMP, map);
+function lonValues(obj) {
 
     for (var i=partB.ARMY.length - 1; i>=0; i--) {
         var place = partB.ARMY[i];
@@ -117,7 +117,7 @@ function lonAnchors(obj) {
     }
     return null;
 }
-function createChart(el, data, map) {
+function createGraph(el, data, map) {
     var width = 800,
         height = 100;
     var y = d3.scale.linear()
@@ -156,8 +156,6 @@ function createChart(el, data, map) {
 
     var yAxisGroup = el.append("g")
         .call(yAxis);
-
-
 
     el.selectAll('line.anchor')
         .data(data)

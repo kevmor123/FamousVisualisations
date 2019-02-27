@@ -13,7 +13,7 @@ body {
     font-size: 0.4em;
 }
 
-.key-dot {
+.box {
     display: inline-block;
     height: 40px;
     margin-right: .9em;
@@ -49,20 +49,20 @@ svg {
     margin: 0 !important;
 }
 
-#mapEl {
+#map {
     border-bottom: 2px solid #999;
 }
 </style>
 </head>
 <body>
 
-<svg id="mapEl" width="800" height="300"></svg>
-<svg id="chartEl" width="800" viewBox="0 0 800 200" preserveAspectRatio="xMidYMin slice"></svg>
+<svg id="map" width="800" height="300"></svg>
+<svg id="chart" width="800" viewBox="0 0 800 200" preserveAspectRatio="xMidYMin slice"></svg>
 <div id="legend">
       <h1 >Legend</h1>
-       <div class="legend"> <p class="country-name"><span class="key-dot dir1"></span>Direction A</p> </div>
-       <div class="legend"> <p class="country-name"><span class="key-dot dir-1"></span>Direction R</p> </div>
-       <div class="legend"> <p class="country-name"><span class="key-dot temper"></span>Temperatures</p> </div>
+       <div class="legend"> <p class="country-name"><span class="box dir1"></span>Direction A</p> </div>
+       <div class="legend"> <p class="country-name"><span class="box dir-1"></span>Direction R</p> </div>
+       <div class="legend"> <p class="country-name"><span class="box temper"></span>Temperatures</p> </div>
        <div class="legend"> <p class="country-name"><span class="dot"></span>City Name</p> </div>
 </div>
 <script src="//d3js.org/d3.v3.js"></script>
@@ -70,7 +70,7 @@ svg {
 <script src="data.js"></script>
 <script>
 var dd = mapmap.datadata;
-var map = mapmap('#mapEl')
+var map = mapmap('#map')
 
     .geometry(partB.ARMY, {
         map: dd.map.key('DIV'),
@@ -106,7 +106,7 @@ var map = mapmap('#mapEl')
         'text-anchor': 'left'
     }))
 ;
-createGraph('chartEl', partB.TEMP, map);
+createGraph('chart', partB.TEMP, map);
 function lonValues(obj) {
 
     for (var i=partB.ARMY.length - 1; i>=0; i--) {
@@ -117,7 +117,7 @@ function lonValues(obj) {
     }
     return null;
 }
-function createGraph(el, data, map) {
+function createGraph(svg, data, map) {
     var width = 800,
         height = 100;
     var y = d3.scale.linear()
@@ -126,7 +126,7 @@ function createGraph(el, data, map) {
         .scale(y)
         .orient("right");
 
-    el = d3.select('#' + el);
+    svg = d3.select('#' + svg);
 
     y.domain(d3.extent(data, function(d) { return d.TEMP; }));
     
@@ -136,7 +136,7 @@ function createGraph(el, data, map) {
         })
         .y(function(d){ return y(d.TEMP); });
 
-    el.append('path')
+    svg.append('path')
         .datum(data)
         .attr({
             'class': 'TEMP',
@@ -146,7 +146,7 @@ function createGraph(el, data, map) {
         })
         .attr('d', path);
 
-    el.selectAll("text")
+    svg.selectAll("text")
         .data(data)
         .enter().append("text")
           .attr("class", "nodetext")
@@ -154,10 +154,10 @@ function createGraph(el, data, map) {
           .attr("dy", function(d) { return y(d.TEMP-2); })
           .text(function(d) { return (d.TEMP + "°C")});
 
-    var yAxisGroup = el.append("g")
+    var yAxisGroup = svg.append("g")
         .call(yAxis);
 
-    el.selectAll('line.anchor')
+    svg.selectAll('line.anchor')
         .data(data)
         .enter()
         .append('line')
@@ -172,7 +172,7 @@ function createGraph(el, data, map) {
             'stroke-width': '0.3'
         });
 
-    d3.select('#mapEl g.fixed')
+    d3.select('#map g.fixed')
         .selectAll('line.anchor')
         .data(data)
         .enter()
